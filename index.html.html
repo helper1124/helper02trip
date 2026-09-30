@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>도쿄 3박 4일 이동 지도 v13.3</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script>
+<style>
+:root{--bg:#f4efe7;--card:#fffdf8;--ink:#172033;--muted:#6b7280;--line:#e7e1d7;--shadow:0 12px 30px rgba(34,26,20,.12)}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(#f7f3ed,#eee7da);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;color:var(--ink)}
+.wrap{max-width:1180px;margin:auto;padding:16px}
+.header{display:flex;justify-content:space-between;gap:10px;align-items:flex-end}
+h1{margin:0;font-size:clamp(28px,4vw,44px);font-weight:900;letter-spacing:-.04em}.sub{color:var(--muted);font-size:13px;margin-top:4px}.status{background:#fff;border-radius:999px;padding:10px 14px;font-weight:900;box-shadow:var(--shadow)}
+.days,.teams{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.teams{margin-top:8px}
+button{border:0;cursor:pointer;font:inherit}.day,.team,.ctrl{background:#fff;border-radius:14px;padding:11px 16px;font-weight:900;color:#374151;box-shadow:0 5px 14px rgba(15,23,42,.08)}
+.day.active{background:#111827;color:#fff}.team.active{background:#eaf3ff;color:#174a8b;outline:2px solid #9ec5ff}
+.grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.72fr);gap:12px;margin-top:10px}
+.mapcard,.side{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+.mapwrap{position:relative}#map{height:min(70vh,730px);min-height:520px;background:#e6ebf1}
+.mapstate{position:absolute;z-index:10;left:12px;top:12px;background:rgba(255,255,255,.94);padding:8px 11px;border-radius:12px;font-size:12px;font-weight:900;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.controlbar{padding:11px;background:rgba(255,255,255,.96);border-top:1px solid #e5e7eb}.controls{display:flex;gap:8px;flex-wrap:wrap}.ctrl{padding:10px 12px;background:#f8fafc}.ctrl.primary{background:#111827;color:white}
+.progress{height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:9px}.progress>div{height:100%;width:0;background:#2563eb;transition:width .15s linear}
+.side{padding:16px}.dayhead{display:flex;gap:10px;align-items:center}.num{width:44px;height:44px;border-radius:14px;background:#111827;color:#fff;display:grid;place-items:center;font-size:20px;font-weight:900}.dayhead h2{margin:0;font-size:22px}.meta{font-size:13px;color:var(--muted);margin-top:3px}
+.route{display:flex;flex-direction:column;gap:8px;margin-top:14px;max-height:470px;overflow:auto;padding-right:3px}.stop{display:grid;grid-template-columns:32px 1fr auto;gap:9px;align-items:center;padding:10px;border:1px solid #eae6de;border-radius:14px;background:#fff}.stop.active{background:#eff6ff;border-color:#93c5fd}.sn{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:#e9eef5;font-size:12px;font-weight:900}.stop b{font-size:14px}.stop small{display:block;color:#64748b;margin-top:2px}.mode{font-size:11px;font-weight:900;background:#f1f5f9;padding:5px 7px;border-radius:999px}
+.links{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}.links a{text-decoration:none;text-align:center;padding:11px;border-radius:12px;font-weight:900}.g1{background:#111827;color:#fff}.g2{background:#fff;color:#111827;border:1px solid #cbd5e1}.note{font-size:12px;color:#64748b;line-height:1.45;margin-top:10px}
+.pin{width:34px;height:34px;border-radius:50% 50% 50% 8px;transform:rotate(-45deg);background:#ef4444;color:#fff;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25);display:grid;place-items:center;font-weight:900}.pin span{transform:rotate(45deg)}
+.vehicle{transition:none!important;font-size:30px;line-height:1;filter:drop-shadow(0 4px 5px rgba(0,0,0,.3))}
+.schematic-badge{display:block;text-align:center;font-size:10px;font-weight:800;line-height:1.5;color:#fff;background:#64748b;border:1px solid #fff;border-radius:5px;padding:1px 4px;filter:none}.selected-leg{margin-top:12px;font-size:13px;font-weight:700;line-height:1.6;color:#334155;padding:10px;background:#eff6ff;border-radius:10px}.playback-info{font-size:12px;color:#475569;margin-top:10px;line-height:1.5}.seek-label{display:flex;justify-content:space-between;font-size:12px;margin-top:8px;color:#475569}#segmentSeek{width:100%;accent-color:#2563eb}.mapstate{right:12px;max-width:620px;line-height:1.5;pointer-events:none}button:disabled{opacity:.55;cursor:default}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.header{align-items:flex-start}.status{font-size:13px}.route{max-height:none}#map{height:58vh;min-height:430px}.links{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div><h1>🗺️ 도쿄 3박 4일 이동 지도</h1><div class="sub">v13.3 · 자동차·도보·전철 예비 이동 · Day별/팀별 전환</div></div>
+    <div class="status" id="status">DAY 1 · 전체</div>
+  </div>
+
+  <div class="days">
+    <button class="day active" data-day="1">DAY 1</button>
+    <button class="day" data-day="2">DAY 2</button>
+    <button class="day" data-day="3">DAY 3</button>
+    <button class="day" data-day="4">DAY 4</button>
+  </div>
+  <div class="teams" id="teams"></div>
+
+  <div class="grid">
+    <section class="mapcard">
+      <div class="mapwrap">
+        <div id="map"></div>
+        <div class="mapstate" id="mapstate">지도 불러오는 중…</div>
+      </div>
+      <div class="controlbar">
+        <div class="controls">
+          <button class="ctrl primary" id="play">도로 경로 불러오기</button>
+          <button class="ctrl" id="pause">Ⅱ 일시정지</button>
+          <button class="ctrl" id="next">다음 목적지</button>
+          <button class="ctrl" id="overview">전체 동선</button>
+          <button class="ctrl" id="toggle3d">3D 보기</button>
+          <button class="ctrl speed" data-speed="0.25">0.25×</button>
+          <button class="ctrl speed" data-speed="0.5">0.5×</button>
+          <button class="ctrl speed activeSpeed" data-speed="1" style="outline:3px solid #bfdbfe">1×</button>
+          <button class="ctrl speed" data-speed="2">2×</button>
+          <button class="ctrl speed" data-speed="4">4×</button>
+        </div>
+        <div class="progress"><div id="progress"></div></div>
+        <div id="playbackInfo" class="playback-info" aria-live="off">구간을 선택하면 예비 이동 시간이 표시됩니다.</div>
+        <label class="seek-label" for="segmentSeek">현재 구간 위치 <span>원하는 지점으로 이동</span></label>
+        <input id="segmentSeek" type="range" min="0" max="999" step="1" value="0" disabled aria-label="현재 구간 재생 위치">
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="dayhead"><div class="num" id="num">1</div><div><h2 id="title">DAY 1</h2><div class="meta" id="meta"></div></div></div>
+      <div class="route" id="route"></div>
+      <div id="selectedLeg" class="selected-leg"></div>
+      <div class="links">
+        <a id="liveMap" class="g1" target="_blank">📍 현재 위치 → 목적지 · Google Maps</a>
+        <a id="segmentMap" class="g2" target="_blank">일정 출발지 → 목적지 · Google Maps</a>
+        <a id="allMap" class="g2" target="_blank">오늘 전체 동선 · 현재 지도</a>
+      </div>
+      <div class="note">※ ‘도로 경로 불러오기’를 누르면 차량 구간의 출발·도착 좌표를 OpenStreetMap DE / OSRM 서비스에 전송합니다. 이후 날짜·팀 전환 시 해당 경로도 불러옵니다. 자동차는 확인된 도로에서만 재생하며, 연결 실패 시 움직이지 않습니다. 실시간 교통·통제는 반영하지 않습니다.
+<br>※ 🚶 도보·🚆 전철은 두 지점 사이를 잇는 예시 이동입니다. 회색 점선은 실제 보행로·철로가 아니며 환승역도 표시하지 않습니다. 정확한 경로는 ‘일정 출발지 → 목적지 · Google Maps’에서 확인하세요.
+<br>숙소: 〒136-0072 東京都江東区大島4丁目12-6 林ビル 3階<br>자동차는 기존과 같은 속도로 재생합니다. 도보·전철도 일정한 예시 속도로 이어 재생하며, 재생 남은 시간은 실제 이동시간이 아닙니다. 위치 막대는 모든 이동수단에서 사용할 수 있습니다.</div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const DATA={
+1:{date:'2026.12.19',teams:null,routes:{전체:[
+['나리타 공항 T1',35.7647,140.3864,'도착','car'],
+['오릭스 렌터카 (나리타 T1)',35.7642,140.3852,'11:00 픽업','car'],
+['나리타산 신쇼지 & 장어거리',35.7863,140.3186,'점심·관광','car'],
+['오지마 숙소',35.688628,139.832352,'東京都江東区大島4丁目12-6 林ビル 3階','car'],
+['아사쿠사 츠루지로',35.7119,139.7967,'저녁','walk'],
+['센소지',35.7148,139.7967,'야경','walk'],
+['도쿄 스카이트리',35.7101,139.8107,'야경','walk'],
+['오지마 숙소 복귀',35.688628,139.832352,'숙소','walk']
+]}},
+2:{date:'2026.12.20',teams:['골프팀','디즈니팀'],routes:{
+골프팀:[
+['오지마 숙소',35.688628,139.832352,'출발','car'],
+['리버후지 CC',35.182262,138.570256,'10:07 티업 · 이동시간은 Google Maps 확인','car'],
+['오지마 숙소',35.688628,139.832352,'복귀·차량 주차','car'],
+['우에노역',35.7138,139.7773,'저녁 합류','transit'],
+['아메요코',35.7102,139.7747,'산책·식사','walk'],
+['돈키호테 오카치마치',35.7087,139.7728,'쇼핑','walk'],
+['오지마 숙소 복귀',35.688628,139.832352,'숙소','transit']],
+디즈니팀:[
+['오지마 숙소',35.688628,139.832352,'출발','transit'],
+['도쿄 디즈니랜드',35.6329,139.8804,'종일 관람','transit'],
+['우에노역',35.7138,139.7773,'저녁 합류','transit'],
+['아메요코',35.7102,139.7747,'산책·식사','walk'],
+['돈키호테 오카치마치',35.7087,139.7728,'쇼핑','walk'],
+['오지마 숙소 복귀',35.688628,139.832352,'숙소','transit']]
+}},
+3:{date:'2026.12.21',teams:['골프팀','관광팀'],routes:{
+골프팀:[
+['오지마 숙소',35.688628,139.832352,'출발','car'],
+['니시후지 CC',35.33284,138.58086,'10:23 티업 · 후지산 조망','car'],
+['오지마 숙소',35.688628,139.832352,'복귀·차량 주차','car'],
+['긴자 4초메',35.6717,139.7650,'19:30~20:00 합류','transit'],
+['GINZA SIX',35.6697,139.7641,'쇼핑','walk'],
+['가부키자',35.6695,139.7678,'산책','walk'],
+['오지마 숙소 복귀',35.688628,139.832352,'숙소','transit']],
+관광팀:[
+['오지마 숙소',35.688628,139.832352,'10:00 출발','transit'],
+['시부야 스크램블',35.6595,139.7005,'관광','transit'],
+['미야시타파크',35.6616,139.7018,'점심·쇼핑','walk'],
+['하라주쿠 다케시타거리',35.6714,139.7031,'관광','walk'],
+['메이지진구',35.6764,139.6993,'관광','walk'],
+['긴자 4초메',35.6717,139.7650,'19:30~20:00 합류','transit'],
+['GINZA SIX',35.6697,139.7641,'쇼핑','walk'],
+['가부키자',35.6695,139.7678,'산책','walk'],
+['오지마 숙소 복귀',35.688628,139.832352,'숙소','transit']]
+}},
+4:{date:'2026.12.22',teams:null,routes:{전체:[
+['오지마 숙소 체크아웃',35.688628,139.832352,'체크아웃','car'],
+['시스이 프리미엄 아울렛',35.71394,140.29612,'점심·쇼핑','car'],
+['오릭스 렌터카 반납 (나리타 T1)',35.7642,140.3852,'18:30까지 반납 계획','car'],
+['나리타 공항 T1',35.7647,140.3864,'귀국','walk']
+]}}
+};
+
+const SAVED_ROADS={};
+const modeLabel={car:'차량',transit:'전철',walk:'도보'};
+// Preview speed in metres per playback second, not real vehicle speed.
+const PREVIEW_METERS_PER_SECOND=100;
+const modeIcon={car:'🚗',transit:'🚆',walk:'🚶'};
+const previewSpeed=mode=>mode==='car'?PREVIEW_METERS_PER_SECOND:mode==='transit'?60:15;
+let day=1,team='전체',idx=0,speed=1,mapReady=false,threeD=false;
+let markers=[],moving=null,segments=[],routeReady=false,loading=false;
+let generation=0,frame=null,playing=false,progress=0,lastTime=null;
+let roadError='',controllers=new Set();
+let roadRequestsEnabled=false;
+const $=id=>document.getElementById(id);
+const route=()=>DATA[day].routes[team];
+const hasCarSegments=()=>route().slice(0,-1).some(s=>s[4]==='car');
+const roadCache=new Map(Object.entries(SAVED_ROADS));
+const roadKey=(a,b)=>[a[1],a[2],b[1],b[2]].map(n=>n.toFixed(5)).join(',');
+const state=text=>$('mapstate').textContent=text;
+const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function pause(){
+  playing=false;
+  if(frame!==null) cancelAnimationFrame(frame);
+  frame=null;lastTime=null;
+  if(map) map.stop();
+  $('play').textContent=progress>0?'▶ 이어서 재생':'▶ 예비주행 시작';
+}
+function resetMotion(){
+  pause();progress=0;
+  if(moving){moving.remove();moving=null;}
+}
+function stopAll(){
+  generation++;
+  controllers.forEach(c=>c.abort());controllers.clear();
+  resetMotion();
+}
+function pointElement(n){
+  const el=document.createElement('div');el.className='pin';
+  el.innerHTML='<span>'+n+'</span>';return el;
+}
+function renderTeamButtons(){
+  const box=$('teams');box.replaceChildren();
+  for(const name of DATA[day].teams||[]){
+    const b=document.createElement('button');b.className='team'+(team===name?' active':'');
+    b.textContent=name;b.onclick=()=>chooseRoute(day,name);box.append(b);
+  }
+}
+function mapsURL(a,b,mode,live=false){
+  const q=new URLSearchParams({api:'1',destination:b[1]+','+b[2],travelmode:{car:'driving',walk:'walking',transit:'transit'}[mode]});
+  if(live) q.set('dir_action','navigate');else q.set('origin',a[1]+','+a[2]);
+  return 'https://www.google.com/maps/dir/?'+q;
+}
+function renderSidebar(){
+  const r=route();$('status').textContent='DAY '+day+' · '+team;
+  $('num').textContent=day;$('title').textContent='DAY '+day;
+  $('meta').textContent=DATA[day].date+' · '+team;
+  const box=$('route');box.replaceChildren();
+  r.forEach((s,i)=>{
+    const b=document.createElement('button');b.className='stop'+(idx===i?' active':'');
+    b.style.textAlign='left';
+    b.innerHTML='<span class="sn">'+(i+1)+'</span><span><b>'+escapeHTML(s[0])+'</b><small>'+escapeHTML(s[3])+'</small></span><span class="mode">'+(i<r.length-1?modeLabel[s[4]]:'도착')+'</span>';
+    b.onclick=()=>selectStop(i);box.append(b);
+  });
+  const i=Math.min(idx,r.length-2),a=r[i],b=r[i+1];
+  $('liveMap').href=mapsURL(a,b,a[4],true);
+  $('segmentMap').href=mapsURL(a,b,a[4]);
+  $('liveMap').textContent='📍 현재 위치 → 목적지 · Google Maps';
+  $('segmentMap').textContent=modeIcon[a[4]]+' 일정 출발지 → 목적지 · Google Maps';
+  $('selectedLeg').textContent=(idx===r.length-1?'마지막 구간: ':'선택 구간: ')+a[0]+' → '+b[0]+' · '+modeLabel[a[4]];
+  const all=$('allMap');
+  all.textContent='🗺️ 오늘 전체 동선 · 현재 지도';all.href='#map';all.removeAttribute('target');
+  all.onclick=e=>{e.preventDefault();pause();fitAll();};
+  ['liveMap','segmentMap'].forEach(id=>$(id).rel='noopener noreferrer');
+  $('progress').style.width=((idx+progress)/(r.length-1)*100)+'%';
+  updatePlaybackInfo();
+  document.querySelectorAll('.day').forEach(b=>b.classList.toggle('active',+b.dataset.day===day));
+}
+function validCoords(cs){
+  return Array.isArray(cs)&&cs.length>=2&&cs.every(p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(p[0])&&Number.isFinite(p[1])&&Math.abs(p[0])<=180&&Math.abs(p[1])<=90);
+}
+async function roadCoords(a,b,token){
+  const key=roadKey(a,b);
+  if(roadCache.has(key)&&validCoords(roadCache.get(key))) return roadCache.get(key);
+  for(const base of ['https://routing.openstreetmap.de/routed-car/route/v1/driving/','https://router.project-osrm.org/route/v1/driving/']){
+    if(token!==generation) throw new Error('cancelled');
+    const c=new AbortController();controllers.add(c);const timeout=setTimeout(()=>c.abort(),20000);
+    try{
+      const res=await fetch(base+a[2]+','+a[1]+';'+b[2]+','+b[1]+'?overview=full&geometries=geojson&steps=false',{signal:c.signal});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json(),cs=data.routes?.[0]?.geometry?.coordinates;
+      if(data.code!=='Ok'||!validCoords(cs)) throw new Error('invalid route');
+      if(token!==generation) throw new Error('cancelled');
+      roadCache.set(key,cs);return cs;
+    }catch(e){if(token!==generation) throw e;}
+    finally{clearTimeout(timeout);controllers.delete(c);}
+  }
+  throw new Error(a[0]+' → '+b[0]+' 도로 경로 연결 실패');
+}
+function distance(a,b){
+  const rad=Math.PI/180,dlat=(b[1]-a[1])*rad,dlon=(b[0]-a[0])*rad;
+  const h=Math.sin(dlat/2)**2+Math.cos(a[1]*rad)*Math.cos(b[1]*rad)*Math.sin(dlon/2)**2;
+  return 6371008.8*2*Math.atan2(Math.sqrt(Math.min(1,h)),Math.sqrt(Math.max(0,1-h)));
+}
+function makeTrack(coords){
+  let total=0;const cumulative=[0];
+  for(let i=1;i<coords.length;i++){total+=distance(coords[i-1],coords[i]);cumulative.push(total);}
+  return {coords,cumulative,total};
+}
+function along(track,fraction){
+  const {coords,cumulative,total}=track;
+  if(total===0)return coords[0];
+  const target=Math.max(0,Math.min(1,fraction))*total;
+  let lo=1,hi=coords.length-1;
+  while(lo<hi){const m=(lo+hi)>>1;if(cumulative[m]<target)lo=m+1;else hi=m;}
+  const i=lo,t=(target-cumulative[i-1])/(cumulative[i]-cumulative[i-1]||1);
+  return [coords[i-1][0]+(coords[i][0]-coords[i-1][0])*t,coords[i-1][1]+(coords[i][1]-coords[i-1][1])*t];
+}
+function durationLabel(seconds){
+  const n=Math.ceil(Math.max(0,seconds));
+  return n>=60?Math.floor(n/60)+'분 '+(n%60)+'초':n+'초';
+}
+function updatePlaybackInfo(){
+  const s=segments[idx],ready=routeReady&&s?.track;
+  const seek=$('segmentSeek');seek.disabled=!ready;seek.value=progress*1000;
+  if(!ready){$('playbackInfo').textContent=routeReady&&idx>=segments.length?'오늘 일정 예비 이동 완료':'구간을 선택하면 예비 이동 시간이 표시됩니다.';return;}
+  const remaining=s.track.total*(1-progress)/(previewSpeed(s.mode)*speed);
+  $('playbackInfo').textContent=modeIcon[s.mode]+' '+(s.mode==='car'?'도로 거리 ':'예시 연결 · 직선 거리 ')+(s.track.total/1000).toFixed(1)+'km · '+speed+'× · 재생 남은 시간 '+durationLabel(remaining)+' · 구간 '+Math.round(progress*100)+'%';
+}
+function seekSegment(value){
+  if(!routeReady||!segments[idx]?.track)return;
+  const resume=playing;
+  pause();progress=Math.max(0,Math.min(.999,Number(value)/1000));
+  if(!startSegment())return;
+  renderSidebar();refreshPlay();
+  if(resume){playing=true;lastTime=null;frame=requestAnimationFrame(tick);}
+  else state('구간 위치 이동 · 시작 버튼으로 이 위치에서 재생');
+}
+function fitAll(){
+  if(!mapReady)return;
+  const bounds=new maplibregl.LngLatBounds();
+  route().forEach(s=>bounds.extend([s[2],s[1]]));
+  map.fitBounds(bounds,{padding:55,maxZoom:13,duration:500});
+}
+function refreshPlay(){
+  if(!roadRequestsEnabled&&hasCarSegments()){$('play').disabled=false;$('play').textContent='도로 경로 불러오기';return;}
+  $('play').disabled=loading;
+  $('play').textContent=loading?'도로 경로 준비 중…':roadError?'↻ 도로 경로 다시 확인':progress>0?'▶ 이어서 재생':'▶ 예비주행 시작';
+}
+async function renderMap(){
+  if(!mapReady)return;
+  const token=generation,r=route();routeReady=false;loading=true;roadError='';segments=[];
+  refreshPlay();
+  markers.forEach(m=>m.remove());markers=[];
+  for(const id of ['trip-road','trip-schematic'])if(map.getLayer(id))map.removeLayer(id);
+  if(map.getSource('trip'))map.removeSource('trip');
+  r.forEach((s,i)=>markers.push(new maplibregl.Marker({element:pointElement(i+1),anchor:'bottom'}).setLngLat([s[2],s[1]]).setPopup(new maplibregl.Popup({offset:25}).setHTML('<b>'+escapeHTML(s[0])+'</b><br>'+escapeHTML(s[3]))).addTo(map)));
+  fitAll();state('자동차 도로 경로 확인 중…');
+  if(!roadRequestsEnabled&&hasCarSegments()){
+    loading=false;refreshPlay();
+    state('도로 경로 불러오기를 누르면 선택 일정의 차량 구간 좌표를 외부 경로 서비스에 보냅니다.');
+    return;
+  }
+  try{
+    const pending=[];
+    for(let i=0;i<r.length-1;i++){
+      const a=r[i],b=r[i+1],mode=a[4];
+      const coords=mode==='car'?await roadCoords(a,b,token):[[a[2],a[1]],[b[2],b[1]]];
+      if(token!==generation)return;
+      pending.push({mode,coords,track:makeTrack(coords)});
+    }
+    if(token!==generation)return;
+    segments=pending;
+    // Separate features avoid straight bridges between independently snapped roads.
+    map.addSource('trip',{type:'geojson',data:{type:'FeatureCollection',features:segments.map(s=>({type:'Feature',properties:{mode:s.mode},geometry:{type:'LineString',coordinates:s.coords}}))}});
+    map.addLayer({id:'trip-road',type:'line',source:'trip',filter:['==',['get','mode'],'car'],paint:{'line-color':'#2563eb','line-width':5,'line-opacity':.85},layout:{'line-cap':'round','line-join':'round'}});
+    map.addLayer({id:'trip-schematic',type:'line',source:'trip',filter:['!=',['get','mode'],'car'],paint:{'line-color':'#8993a2','line-width':3,'line-dasharray':[2,3],'line-opacity':.7}});
+    routeReady=true;updatePlaybackInfo();state('준비 완료 · 파랑: 자동차 도로 / 회색 점선: 도보·전철 예시 연결');
+  }catch(e){
+    if(token!==generation)return;
+    roadError=e.message;state('⚠ '+roadError+' · 다시 확인하거나 Google Maps를 이용하세요.');
+  }finally{if(token===generation){loading=false;refreshPlay();}}
+}
+function chooseRoute(newDay,newTeam){
+  stopAll();day=newDay;team=newTeam;idx=0;routeReady=false;segments=[];
+  renderTeamButtons();renderSidebar();renderMap();
+}
+function selectStop(i){
+  resetMotion();idx=i;renderSidebar();refreshPlay();
+  if(mapReady){const s=route()[i];map.flyTo({center:[s[2],s[1]],zoom:14,pitch:threeD?50:0,duration:500});}
+}
+function startSegment(){
+  const s=segments[idx],r=route();
+  if(!s){pause();state('예비주행 완료');return false;}
+  if(!s.track||!validCoords(s.coords)){pause();state('⚠ 이동 경로가 없어 재생하지 않습니다.');return false;}
+  if(moving)moving.remove();
+  const el=document.createElement('div');el.className='vehicle';el.textContent=modeIcon[s.mode];
+  if(s.mode!=='car'){
+    const badge=document.createElement('span');badge.className='schematic-badge';badge.textContent='예시';el.append(badge);
+  }
+  moving=new maplibregl.Marker({element:el,anchor:'center'}).setLngLat(along(s.track,progress)).addTo(map);
+  map.stop();map.jumpTo({center:along(s.track,progress),zoom:14,pitch:threeD?50:0,bearing:0});
+  $('play').textContent=modeIcon[s.mode]+' 예비 이동 중';
+  state((s.mode==='car'?'자동차 예비주행':modeLabel[s.mode]+' 예시 이동 · 실제 보행로·철로 아님')+' · '+r[idx][0]+' → '+r[idx+1][0]);return true;
+}
+function tick(now){
+  if(!playing)return;
+  const elapsed=lastTime===null?0:Math.max(0,Math.min(50,now-lastTime));lastTime=now;
+  const total=segments[idx].track.total;
+  progress=total===0?1:Math.min(1,progress+(elapsed/1000)*previewSpeed(segments[idx].mode)*speed/total);
+  const pt=along(segments[idx].track,progress);
+  moving.setLngLat(pt);
+  // No flyTo/easeTo during playback: both marker and camera follow road geometry.
+  map.jumpTo({center:pt,pitch:threeD?50:0});
+  $('progress').style.width=((idx+progress)/(route().length-1)*100)+'%';
+  updatePlaybackInfo();
+  if(progress>=1){
+    moving.remove();moving=null;idx++;progress=0;lastTime=null;renderSidebar();
+    if(!startSegment())return;
+  }
+  frame=requestAnimationFrame(tick);
+}
+function play(){
+  if(!mapReady){state('지도 준비 중…');return;}
+  if(!roadRequestsEnabled&&hasCarSegments()){roadRequestsEnabled=true;renderMap();return;}
+  if(roadError){stopAll();renderMap();return;}
+  if(!routeReady||loading||playing)return;
+  if(idx>=segments.length){resetMotion();idx=0;renderSidebar();}
+  if(!startSegment())return;
+  playing=true;lastTime=null;frame=requestAnimationFrame(tick);
+}
+let map=null;
+renderTeamButtons();renderSidebar();
+document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{const d=+b.dataset.day;chooseRoute(d,DATA[d].teams?.[0]||'전체');});
+$('play').onclick=play;
+$('pause').onclick=()=>{pause();state('일시정지 · 시작 버튼으로 같은 위치에서 이어서 재생');};
+$('next').onclick=()=>selectStop(Math.min(idx+1,route().length-1));
+$('segmentSeek').oninput=e=>seekSegment(e.target.value);
+$('overview').onclick=()=>{pause();fitAll();};
+$('toggle3d').onclick=()=>{threeD=!threeD;$('toggle3d').textContent=threeD?'2D 보기':'3D 보기';if(mapReady)map.jumpTo({pitch:threeD?50:0,bearing:0});};
+document.querySelectorAll('.speed').forEach(b=>b.onclick=()=>{speed=+b.dataset.speed;document.querySelectorAll('.speed').forEach(x=>x.style.outline='none');b.style.outline='3px solid #bfdbfe';updatePlaybackInfo();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){pause();state('화면이 숨겨져 일시정지했습니다. 시작 버튼으로 이어서 재생하세요.');}});
+try{
+  if(typeof maplibregl==='undefined')throw new Error('지도 프로그램 연결 실패');
+  map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/liberty',center:[139.79,35.70],zoom:10,pitch:0,bearing:0});
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-left');
+  map.on('load',()=>{mapReady=true;renderMap();});
+  map.on('error',()=>{if(!mapReady)state('지도 연결 확인 필요 · 일정과 Google Maps 버튼은 사용할 수 있습니다.');});
+}catch(e){state(e.message+' · 인터넷 연결을 확인해 주세요.');$('play').disabled=true;}
+
+</script>
+</body>
+</html>
